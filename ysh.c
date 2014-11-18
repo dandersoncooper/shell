@@ -26,7 +26,7 @@ void handle_signal(int signo)
 //takes in a string with spaces and breaks the string into array entries at the spaces, filling an argument array
 void fill_argv(char *tmp_argv)
 {
-    char *foo = tmp_argv; //puts the tmp that was passed in into a new character array
+    char *foo = tmp_argv; //puts the tmp that was passed in into a new character array, foo
     int index = 0;
     char ret[100]; //makes another character array and sets all the bytes to zero
     bzero(ret, 100);
