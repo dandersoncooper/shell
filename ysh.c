@@ -18,10 +18,10 @@ typedef void (*sighandler_t)(int);
 static char *my_argv[100], *my_envp[100];
 static char *search_path[10];
 
-void handle_signal(int signo)
-{
-    printf("\n[MY_SHELL ] ");
-    fflush(stdout);
+void handle_signal(int signo) //ask Sweany
+{                             //
+    printf("\n[MY_SHELL ] "); //
+    fflush(stdout);           //
 }
 //takes in a string with spaces and breaks the string into array entries at the spaces, filling an argument array
 void fill_argv(char *tmp_argv)
@@ -64,48 +64,48 @@ void copy_envp(char **envp)
         memcpy(my_envp[index], envp[index], strlen(envp[index])); //copies over the data
     }
 }
-
+//finds and stores the path information to path_str
 void get_path_string(char **tmp_envp, char *bin_path)
 {
     int count = 0;
     char *tmp;
-    while(1) {
-        tmp = strstr(tmp_envp[count], "PATH");
-        if(tmp == NULL) {
+    while(1) { //infinite loop
+        tmp = strstr(tmp_envp[count], "PATH"); //checks through the environment information and looks for the path
+        if(tmp == NULL) { //if the path wasn't found increment the count and try again at that index
             count++;
         } else {
-            break;
+            break; //when it's found, break out of the infinite loop
         }
     }
-        strncpy(bin_path, tmp, strlen(tmp));
+        strncpy(bin_path, tmp, strlen(tmp)); //store the path we obtained in bin_path, which is the path_str we declared in main
 }
-
+//copies path_str to search_path in the proper format
 void insert_path_str_to_search(char *path_str) 
 {
     int index=0;
     char *tmp = path_str;
     char ret[100];
 
-    while(*tmp != '=')
+    while(*tmp != '=') //looks for the = in path_str (now tmp)
         tmp++;
-    tmp++;
+    tmp++; //advances the pointer once more to get the character after the =
 
-    while(*tmp != '\0') {
-        if(*tmp == ':') {
-            strncat(ret, "/", 1);
+    while(*tmp != '\0') { //digs through the remainder of tmp until the end is reached
+        if(*tmp == ':') { //if we reach a :, execute the following code
+            strncat(ret, "/", 1); //add a / to the end of ret
             search_path[index] = 
-		(char *) malloc(sizeof(char) * (strlen(ret) + 1));
-            strncat(search_path[index], ret, strlen(ret));
-            strncat(search_path[index], "\0", 1);
-            index++;
-            bzero(ret, 100);
-        } else {
-            strncat(ret, tmp, 1);
+		(char *) malloc(sizeof(char) * (strlen(ret) + 1)); //allocate space at the current search_path index for the current contents of ret
+            strncat(search_path[index], ret, strlen(ret)); //add the contents of ret to the current search_path index
+            strncat(search_path[index], "\0", 1); //add a null pointer to the end
+            index++; //advance the index so the next : executes the code for the next search_path index
+            bzero(ret, 100); //empty out ret
+        } else { //if wedidn't find a :, do this
+            strncat(ret, tmp, 1); //add the current character in tmp to the end of ret
         }
-        tmp++;
+        tmp++; //advances the tmp pointer to check the next character
     }
 }
-//attaches a file path to files
+//attaches a path to commands
 int attach_path(char *cmd)
 {
     char ret[100]; //builds a characters array
@@ -113,7 +113,7 @@ int attach_path(char *cmd)
     int fd;
     bzero(ret, 100); //fills the corresponding bytes with zeroes
     for(index=0;search_path[index]!=NULL;index++) { //goes through until search_path is null
-        strcpy(ret, search_path[index]); //copies the contents of search_path at the current index into ret (and presumably wipes the previous contents of ret
+        strcpy(ret, search_path[index]); //copies the contents of search_path at the current index into ret (and presumably wipes the previous contents of ret)
         strncat(ret, cmd, strlen(cmd)); //attaches the command onto the end of ret after the contents of search_path
         if((fd = open(ret, O_RDONLY)) > 0) { //attempts to open the command as read only (positive integers mean it opened, everything else means an error)
             strncpy(cmd, ret, strlen(ret)); //if the command was opened successfully, change the command to the contents of ret, which appear to be the file path plus the file name
@@ -136,7 +136,7 @@ void call_execve(char *cmd)
             exit(1); //kills the child process after appropriate errors have printed
         }
     } else {
-        wait(NULL); //waits for the child process to finish (by either crashing or closing normally or failing to run) before resuming running the shell
+        wait(NULL); //waits for the child process to finish (by either crashing or closing normally) before resuming running the shell
     }
 }
 //empties out the my_argv array
@@ -149,33 +149,33 @@ void free_argv()
         free(my_argv[index]); //releases the allocated memory
     }
 }
-
+//main
 int main(int argc, char *argv[], char *envp[])
 {
-    char c;
-    int i, fd;
-    char *tmp = (char *)malloc(sizeof(char) * 100);
-    char *path_str = (char *)malloc(sizeof(char) * 256);
-    char *cmd = (char *)malloc(sizeof(char) * 100);
+    char c;                                              //initializes a bunch of variables and allocates space where necessary
+    int i, fd;                                           //
+    char *tmp = (char *)malloc(sizeof(char) * 100);      //
+    char *path_str = (char *)malloc(sizeof(char) * 256); //
+    char *cmd = (char *)malloc(sizeof(char) * 100);      //
     
-    signal(SIGINT, SIG_IGN);
-    signal(SIGINT, handle_signal);
+    signal(SIGINT, SIG_IGN);       //ask Sweany
+    signal(SIGINT, handle_signal); //
 
-    copy_envp(envp);
+    copy_envp(envp); //copies envp to my_envp
 
-    get_path_string(my_envp, path_str);   
-    insert_path_str_to_search(path_str);
+    get_path_string(my_envp, path_str); //digs through the environment info for the path information and stores it in path_str
+    insert_path_str_to_search(path_str); //uses path_str to build the path that attach_path() uses later on
 
-    if(fork() == 0) {
-        execve("/usr/bin/clear", argv, my_envp);
-        exit(1);
-    } else {
-        wait(NULL);
-    }
-    printf("[MY_SHELL ] ");
-    fflush(stdout);
+    if(fork() == 0) {                            //clears the screen using a thread to run the system's clear command
+        execve("/usr/bin/clear", argv, my_envp); //
+        exit(1);                                 //
+    } else {                                     //
+        wait(NULL);                              //
+    }                                            //
+    printf("[MY_SHELL ] "); //prints the initial prompt (if we wanted to include any information that displays on launch, such as version number, this would be where to do it)
+    fflush(stdout); //flushes the buffer so our initial getchar() doesn't grab anything unexpected
 
-    while(c != EOF) {
+    while(c != EOF) { //in our OS, EOF is entered with CTRL+Z, so that's how you exit the shell
         c = getchar();
         switch(c) { //initiates a switch statement that checks the input characters and runs code when enter is pressed
             case '\n': if(tmp[0] == '\0') { //if the input is empty, just print out the prompt again
@@ -186,14 +186,14 @@ int main(int argc, char *argv[], char *envp[])
                        strncat(cmd, "\0", 1); //add a null character to the end
                        if(index(cmd, '/') == NULL) { //if the command does NOT contain a / (and thus doesnt have an associated path)
                            if(attach_path(cmd) == 0) { //attaches the appropriate path to the command name
-                               call_execve(cmd); //run call_execve
+                               call_execve(cmd); //attempts to run the command
                            } else {
                                printf("%s: command not found\n", cmd); //print an error if the command could not be run
                            }
                        } else { //if the command DOES contain a / (and thus presumably has a path attached)
-                           if((fd = open(cmd, O_RDONLY)) > 0) { //checks if the command can be opened and then closes it
+                           if((fd = open(cmd, O_RDONLY)) > 0) { //checks if the command can be opened (like a file) and then closes it
                                close(fd);
-                               call_execve(cmd); //run call_execve
+                               call_execve(cmd); //attempts to run the command
                            } else {
                                printf("%s: command not found\n", cmd);
                            }
@@ -204,16 +204,16 @@ int main(int argc, char *argv[], char *envp[])
                    }
                    bzero(tmp, 100); //also make tmp empty
                    break;
-            default: strncat(tmp, &c, 1); //if the input was not the enter key, add what was typed to tmp
+            default: strncat(tmp, &c, 1); //if the input was not the enter key, add what was typed to tmp (somehow backspace manages to work properly in this setup)
                  break;
         }
     }
-    free(tmp);
-    free(path_str);
-    for(i=0;my_envp[i]!=NULL;i++)
-        free(my_envp[i]);
-    for(i=0;i<10;i++)
-        free(search_path[i]);
-    printf("\n");
+    free(tmp);                    //frees up remaining allocated memory
+    free(path_str);               //
+    for(i=0;my_envp[i]!=NULL;i++) //
+        free(my_envp[i]);         //
+    for(i=0;i<10;i++)             //
+        free(search_path[i]);     //
+    printf("\n"); //line break and exit
     return 0;
 }
